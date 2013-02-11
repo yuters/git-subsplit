@@ -166,8 +166,14 @@ subsplit_publish()
 			fi
 			LOCAL_BRANCH="${REMOTE_NAME}-branch-${HEAD}"
 			say " - syncing branch '${HEAD}'"
-			git branch -D "$LOCAL_BRANCH" >/dev/null 2>&1
-			git subtree split -q --prefix="$SUBPATH" --branch="$LOCAL_BRANCH" "origin/${HEAD}" >/dev/null
+			git subtree split --rejoin --prefix="$SUBPATH" --branch="$LOCAL_BRANCH" "${HEAD}"
+			if [ $? -ne 0 ]
+			then
+				say " - problem splitting '${HEAD}', rebuilding subsplit from scratch"
+				git branch -D "$LOCAL_BRANCH" 2>/dev/null
+				git subtree split --rejoin --prefix="$SUBPATH" --branch="$LOCAL_BRANCH" "origin/${HEAD}"
+			fi
+
 			if [ $? -eq 0 ]
 			then
 				PUSH_CMD="git push -q ${DRY_RUN} --force $REMOTE_NAME ${LOCAL_BRANCH}:${HEAD}"
